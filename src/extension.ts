@@ -5,36 +5,30 @@ import * as converters from "./converters";
 import * as utils from "./utils";
 
 const HEX_REGEXES = [
-  /^(?:0[xX]|#)([0-9a-fA-F]+)(?:[uU]?[lL]?[lL]?|[mM])$/,
-  /^#([0-9a-fA-F]+)$/,
-  // "([0-9]+)", this is no hexadecimal!
+  /^(?:0x|#)([0-9a-f]+)(?:u?l?l?|m)$/is,
 ];
 
 const FLOAT_REGEXES = [
-  // integer allows for thousand separators and float radix 10 indicator
-  /^[+-]?\d{1,3}(?:,?\d{3})*(?:[uU]?[lL]?[lL]?|[mM])?$/,
-  // decimal & scientific notation with e or *10^, allows for thousand separators, omitted leading zero, and radix 10 indicator
-  /^[+-]?(?:\d{1,3}(?:,?\d{3})*|0)?(?:\.\d+[1-9]?)?(?:[eE]|\*10\^(?:[+-]?\d+))?[mM]?$/,
+  // Integer allows IEEE 754 format indicator
+  /^([+-]?\d+)(?:u?l?l|[fdm])?$/is,
+  // Decimal & scientific notation with e or *10^, allows colon & dot decimal separator, omitted leading zero, and IEEE 754 format indicator
+  /^([+-]?(?:\d*[.,]\d+|\d+)(?:e[+-]?\d+)?)[fdm]?$/is,
+  // Integer with colon & apostrophe thousand separators, allows IEEE 754 format indicator
+  /^([+-]?\d{1,3}(?:[,']\d{3})*)(?:u?l?l|[fdm])?$/is,
 ];
 
-function parseAny(str: string, regexes: Array<RegExp>) {
+function matchFirst(str: string, regexes: Array<RegExp>) {
   for (let regex of regexes) {
     let match = regex.exec(str);
-    if (match) {
-      return match[1];
-    }
+    if (match) return match[1];
   }
   return undefined;
 }
 
 function getHover(original: string, bytes: Uint8Array, littleEndian: boolean) {
   let length = bytes.length;
-  let asUnsigned = utils.addThousandsSeparator(
-    converters.bytesToUnsignedDec(bytes)
-  );
-  let asSigned = utils.addThousandsSeparator(
-    converters.bytesToSignedDec(bytes)
-  );
+  let asUnsigned = utils.addThousandsSeparator(converters.bytesToUnsignedDec(bytes));
+  let asSigned = utils.addThousandsSeparator(converters.bytesToSignedDec(bytes));
   let asDecimal = asUnsigned + (asSigned != asUnsigned ? " / " + asSigned : "");
   let asBinary = utils.addBytesSeparator(converters.bytesToBin(bytes));
   let asFloat16 = converters.bytesToFloat16(bytes);
@@ -43,45 +37,19 @@ function getHover(original: string, bytes: Uint8Array, littleEndian: boolean) {
   let asCharSequence = converters.bytesToStr(bytes);
   let asSize = converters.bytesToSize(bytes);
 
-  let endianness = (littleEndian ? "Little" : "Big") + " Endian";
+  let endianness = (littleEndian ? "*little" : "*big") + " endian*";
 
-  let message =
-    "HexInspector: " +
-    original +
-    " (" +
-    length +
-    "B)" +
-    "\n" +
-    "" +
-    "\n" +
-    "Decimal:  " +
-    asDecimal +
-    "\n" +
-    "Size:     " +
-    asSize +
-    "\n" +
-    "Binary:   " +
-    asBinary +
-    "\n" +
-    "Float16:  " +
-    (asFloat16 == "" ? "-" : asFloat16) +
-    "\n" +
-    "Float32:  " +
-    (asFloat32 == "" ? "-" : asFloat32) +
-    "\n" +
-    "Float64:  " +
-    (asFloat64 == "" ? "-" : asFloat64) +
-    "\n" +
-    "Chars:    " +
-    asCharSequence +
-    "\n" +
-    "" +
-    "\n" +
-    endianness +
-    "\n" +
-    "";
-
-  return new vscode.Hover({ language: "hexinspector", value: message });
+  return new vscode.Hover(new vscode.MarkdownString()
+    .appendMarkdown("**HexInspector: " + original + " (" + length + "B)**")
+    .appendMarkdown("\nFormat | Value\n--- | ---")
+    .appendMarkdown("\ndecimal | " + asDecimal)
+    .appendMarkdown("\nbinary | " + asBinary)
+    .appendMarkdown(asFloat16 ? "" : "\nfloat16 | " + asFloat16)
+    .appendMarkdown(asFloat32 ? "" : "\nfloat32 | " + asFloat32)
+    .appendMarkdown(asFloat64 ? "" : "\nfloat64 | " + asFloat64)
+    .appendMarkdown("\nsize | " + asSize)
+    .appendMarkdown("\nchars | " + asCharSequence)
+    .appendMarkdown("\n" + endianness));
 }
 
 export function activate(context: vscode.ExtensionContext) {
