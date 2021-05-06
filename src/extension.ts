@@ -63,21 +63,15 @@ export function activate(context: vscode.ExtensionContext) {
           .getConfiguration("hexinspector")
           .get("endianness");
         // Chain of responsibility hex>float
-        let bytes = converters.hexToBytes(
-          parseAny(word, HEX_REGEXES),
-          little_endian
-        );
-        bytes ??= converters.float64ToBytes(
-          parseAny(word, FLOAT_REGEXES),
-          little_endian
-        );
+        let bytes =
+          converters.hexToBytes(matchFirst(word, HEX_REGEXES), little_endian) ??
+          converters.floatToBytes(matchFirst(word, FLOAT_REGEXES), little_endian);
         if (bytes) {
           return getHover(word, bytes, little_endian);
         }
       },
     }
   );
-
   context.subscriptions.push(hover);
 }
 
