@@ -28,8 +28,13 @@ function matchFirst(str: string, regexes: Array<RegExp>) {
   return undefined;
 }
 
-function getHover(original: string, bytes: Uint8Array, littleEndian: boolean) {
+function toHexString(bytes: Uint8Array) {
+  return '0x' + Buffer.from(bytes).toString('hex');
+}
+
+function getHover(original: string, bytes: Uint8Array, little_endian: boolean) {
   let length = bytes.length;
+  let displayBy = toHexString(bytes);
   let asUnsigned = utils.addThousandsSeparator(converters.bytesToUnsignedDec(bytes));
   let asSigned = utils.addThousandsSeparator(converters.bytesToSignedDec(bytes));
   let asDecimal = asUnsigned + (asSigned != asUnsigned ? " / " + asSigned : "");
