@@ -5,16 +5,19 @@ import * as converters from "./converters";
 import * as utils from "./utils";
 
 const HEX_REGEXES = [
-  /^(?:0x|#)([0-9a-f]+)(?:u?l?l?|m)$/is,
+  /^(?:0x|\#)([0-9a-f]+)u?l?l?$/is,
+];
+
+const INTEGER_REGEXES = [
+  // Integer allows IEEE 754 format indicator
+  /^([+-]?\d+)u?l?l?$/is,
+  // Integer with colon & apostrophe thousand separators, allows IEEE 754 format indicator
+  /^([+-]?\d{1,3}(?:[,']\d{3})*)u?l?l?$/is,
 ];
 
 const FLOAT_REGEXES = [
-  // Integer allows IEEE 754 format indicator
-  /^([+-]?\d+)(?:u?l?l|[fdm])?$/is,
-  // Decimal & scientific notation with e or *10^, allows colon & dot decimal separator, omitted leading zero, and IEEE 754 format indicator
+  // Decimal & scientific notation, allows colon & dot decimal separator, omitted leading zero, and IEEE 754 format indicator
   /^([+-]?(?:\d*[.,]\d+|\d+)(?:e[+-]?\d+)?)[fdm]?$/is,
-  // Integer with colon & apostrophe thousand separators, allows IEEE 754 format indicator
-  /^([+-]?\d{1,3}(?:[,']\d{3})*)(?:u?l?l|[fdm])?$/is,
 ];
 
 function matchFirst(str: string, regexes: Array<RegExp>) {
