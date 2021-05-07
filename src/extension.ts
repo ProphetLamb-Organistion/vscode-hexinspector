@@ -45,19 +45,23 @@ function getHover(original: string, bytes: Uint8Array, little_endian: boolean) {
   let asCharSequence = converters.bytesToStr(bytes);
   let asSize = converters.bytesToSize(bytes);
 
-  let endianness = (littleEndian ? "*little" : "*big") + " endian*";
+  let endianness = (little_endian ? "*little" : "*big") + " endian*";
+  
+  let markdown = new vscode.MarkdownString();
+  markdown.isTrusted = true;
+  markdown
+    .appendMarkdown('**HexInspector: ' + displayBy + ' (' + length + 'B)**')
+    .appendMarkdown('\n\nFormat | Value\n --- | --- ')
+    .appendMarkdown('\ndec | ' + asDecimal)
+    .appendMarkdown('\nbin | ' + asBinary)
+    .appendMarkdown(!asFloat16 ? '' : '\nf16 | ' + asFloat16)
+    .appendMarkdown(!asFloat32 ? '' : '\nf32 | ' + asFloat32)
+    .appendMarkdown(!asFloat64 ? '' : '\nf64 | ' + asFloat64)
+    .appendMarkdown('\nfsize | ' + asSize)
+    .appendMarkdown('\nchars | ' + asCharSequence)
+    .appendMarkdown('\n' + endianness);
 
-  return new vscode.Hover(new vscode.MarkdownString()
-    .appendMarkdown("**HexInspector: " + original + " (" + length + "B)**")
-    .appendMarkdown("\nFormat | Value\n--- | ---")
-    .appendMarkdown("\ndecimal | " + asDecimal)
-    .appendMarkdown("\nbinary | " + asBinary)
-    .appendMarkdown(asFloat16 ? "" : "\nfloat16 | " + asFloat16)
-    .appendMarkdown(asFloat32 ? "" : "\nfloat32 | " + asFloat32)
-    .appendMarkdown(asFloat64 ? "" : "\nfloat64 | " + asFloat64)
-    .appendMarkdown("\nsize | " + asSize)
-    .appendMarkdown("\nchars | " + asCharSequence)
-    .appendMarkdown("\n" + endianness));
+  return new vscode.Hover(markdown);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -73,6 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
         // Chain of responsibility hex>float
         let bytes =
           converters.hexToBytes(matchFirst(word, HEX_REGEXES), little_endian) ??
+          converters.intToBytes(matchFirst(word, INTEGER_REGEXES), little_endian) ??
           converters.floatToBytes(matchFirst(word, FLOAT_REGEXES), little_endian);
         if (bytes) {
           return getHover(word, bytes, little_endian);
