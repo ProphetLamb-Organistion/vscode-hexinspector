@@ -105,16 +105,34 @@ export function bytesToBin(bytes: Uint8Array) {
 
 export function bytesToFloat16(bytes: Uint8Array) {
   if (bytes.length > 2 || bytes.length == 0) return undefined;
+  if (bytes.length == 1)
+    bytes = new Uint8Array([0, bytes[0]]);
   return ieee754.read(bytes, 0, true, 10, 2);
 }
 
 export function bytesToFloat32(bytes: Uint8Array) {
   if (bytes.length > 4 || bytes.length == 0) return undefined;
-  return ieee754.read(bytes, 0, true, 23, 4);
+  let padBytes;
+  if (bytes.length == 4) {
+    padBytes = bytes;
+  } else {
+    padBytes = new Uint8Array(4);
+    for (let i = 0; i < bytes.length; i++)
+      padBytes[4 - i] = bytes[i];
+  }
+  return ieee754.read(padBytes, 0, true, 23, 4);
 }
 
 export function bytesToFloat64(bytes: Uint8Array) {
   if (bytes.length > 8 || bytes.length == 0) return undefined;
+  let padBytes;
+  if (bytes.length == 8) {
+    padBytes = bytes;
+  } else {
+    padBytes = new Uint8Array(4);
+    for (let i = 0; i < bytes.length; i++)
+      padBytes[8 - i] = bytes[i];
+  }
   return ieee754.read(bytes, 0, true, 52, 8);
 }
 
