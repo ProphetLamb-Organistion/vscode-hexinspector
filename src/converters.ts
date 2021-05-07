@@ -204,9 +204,24 @@ export function bytesToSize(bytes: Uint8Array) {
 
 export function floatToBytes(str: string, little_endian: boolean = true) {
   if (!str) return undefined;
-  let value = parseFloat(str);
+  const value = parseFloat(str);
   if (Number.isNaN(value) || !Number.isFinite(value)) return undefined;
   let bytes = new Uint8Array(8);
   ieee754.write(bytes, value, 0, little_endian, 52, 8);
   return bytes;
+}
+
+export function intToBytes(str: string, little_endian: boolean = true) {
+  if (!str) return undefined;
+  const zero = BigInt(0);
+  const byMax = BigInt(256);
+  let result = new Uint8Array(32);
+  let value = BigInt(str);
+  let i = 0;
+  for (; value > zero; i++) {
+    result[i] = Number(value % byMax);
+    value /= byMax;
+  }
+  result = result.slice(0,Math.pow(2, Math.ceil(Math.log2(i))));
+  return little_endian ? result : result.reverse();
 }
